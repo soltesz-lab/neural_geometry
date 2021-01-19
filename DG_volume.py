@@ -2,6 +2,7 @@
 import numpy as np
 from neural_geometry.rbf_surface import RBFSurface
 from neural_geometry.rbf_volume import RBFVolume
+import rbf
 
 max_u = 11690.
 max_v = 2956.

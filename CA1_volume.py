@@ -3,9 +3,10 @@ import numpy as np
 from neural_geometry.geometry import transform_volume
 from neural_geometry.rbf_surface import RBFSurface
 from neural_geometry.rbf_volume import RBFVolume
+import rbf
 
-max_u = 6000.
-max_v = 4000.
+max_u = 4000.
+max_v = 1250.
 
 def CA1_volume_transform(u, v, l):
     return u, v, l
@@ -13,10 +14,10 @@ def CA1_volume_transform(u, v, l):
 def CA1_volume(u, v, l, rotate=None):
     """Parametric equations of the CA1 volume."""
 
-    return transform_volume(CA1_volume_transform, u, v, l), u, v, l, rotate=rotate)
+    return transform_volume(CA1_volume_transform, u, v, l, rotate=rotate)
 
 
-def CA1_meshgrid(extent_u, extent_v, extent_l, resolution=[30, 30, 10], rotate=None, return_uvl=False):
+def CA1_meshgrid(extent_u, extent_v, extent_l, resolution=[10, 10, 10], rotate=None, return_uvl=False):
 
     ures, vres, lres = resolution
 
@@ -33,7 +34,7 @@ def CA1_meshgrid(extent_u, extent_v, extent_l, resolution=[30, 30, 10], rotate=N
         return xyz
 
 
-def make_CA1_volume(extent_u, extent_v, extent_l, rotate=None, basis=rbf.basis.phs3, order=2, resolution=[30, 30, 10],
+def make_CA1_volume(extent_u, extent_v, extent_l, rotate=None, basis=rbf.basis.phs3, order=2, resolution=[10, 10, 10],
                 return_xyz=False):
     """Creates an RBF volume based on the parametric equations of the CA1 volume."""
 
@@ -47,7 +48,7 @@ def make_CA1_volume(extent_u, extent_v, extent_l, rotate=None, basis=rbf.basis.p
         return vol
 
 
-def make_CA1_surface(extent_u, extent_v, obs_l, rotate=None, basis=rbf.basis.phs2, order=1, resolution=[33, 30]):
+def make_CA1_surface(extent_u, extent_v, obs_l, rotate=None, basis=rbf.basis.phs2, order=1, resolution=[10, 10]):
     """Creates an RBF surface based on the parametric equations of the CA1 volume.
     """
     ures = resolution[0]

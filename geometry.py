@@ -12,6 +12,18 @@ from neural_geometry.rbf_volume import RBFVolume
 logger = logging.getLogger('%s' % __name__)
 
 
+def viewitems(obj, **kwargs):
+    """
+    Function for iterating over dictionary items with the same set-like
+    behaviour on Py2.7 as on Py3.
+
+    Passes kwargs to method."""
+    func = getattr(obj, "viewitems", None)
+    if func is None:
+        func = obj.items
+    return func(**kwargs)
+
+
 def rotate2d(theta):
     """
     Returns the 2D rotation matrix associated with counterclockwise rotation around the origin
@@ -40,6 +52,7 @@ def rotate3d(axis, theta):
 
 def make_rotate3d(rotate):
     """Creates a rotation matrix based on angles in degrees."""
+    rot = None
     for i in range(0, 3):
         if rotate[i] != 0.:
             a = float(np.deg2rad(rotate[i]))
@@ -48,7 +61,7 @@ def make_rotate3d(rotate):
     return rot
 
 
-def transform_volume(transform, u, v, l, transform, rotate=None):
+def transform_volume(transform, u, v, l, rotate=None):
     """Transform to Euclidean volume."""
 
     u = np.array([u]).reshape(-1, )
