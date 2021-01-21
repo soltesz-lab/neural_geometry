@@ -1,9 +1,8 @@
-
+import sys
 import numpy as np
 from neural_geometry.geometry import transform_volume
-from neural_geometry.rbf_surface import RBFSurface
-from neural_geometry.rbf_volume import RBFVolume
-import rbf
+from neural_geometry.linear_volume import LinearVolume
+
 
 max_u = 4000.
 max_v = 1250.
@@ -17,7 +16,7 @@ def CA1_volume(u, v, l, rotate=None):
     return transform_volume(CA1_volume_transform, u, v, l, rotate=rotate)
 
 
-def CA1_meshgrid(extent_u, extent_v, extent_l, resolution=[10, 10, 10], rotate=None, return_uvl=False):
+def CA1_meshgrid(extent_u, extent_v, extent_l, resolution=[2, 2, 2], rotate=None, return_uvl=False):
 
     ures, vres, lres = resolution
 
@@ -34,13 +33,13 @@ def CA1_meshgrid(extent_u, extent_v, extent_l, resolution=[10, 10, 10], rotate=N
         return xyz
 
 
-def make_CA1_volume(extent_u, extent_v, extent_l, rotate=None, basis=rbf.basis.phs3, order=2, resolution=[10, 10, 10],
-                return_xyz=False):
-    """Creates an RBF volume based on the parametric equations of the CA1 volume."""
+def make_CA1_volume(extent_u, extent_v, extent_l, rotate=None, resolution=[2, 2, 2], return_xyz=False):
+    """Creates an linear volume based on the parametric equations of the CA1 volume."""
 
     xyz, obs_u, obs_v, obs_l = CA1_meshgrid(extent_u, extent_v, extent_l, \
-                                            rotate=rotate, resolution=resolution, return_uvl=True)
-    vol = RBFVolume(obs_u, obs_v, obs_l, xyz, basis=basis, order=order)
+                                            rotate=rotate, resolution=resolution,
+                                            return_uvl=True)
+    vol = LinearVolume(obs_u, obs_v, obs_l, xyz)
 
     if return_xyz:
         return vol, xyz
@@ -48,18 +47,50 @@ def make_CA1_volume(extent_u, extent_v, extent_l, rotate=None, basis=rbf.basis.p
         return vol
 
 
-def make_CA1_surface(extent_u, extent_v, obs_l, rotate=None, basis=rbf.basis.phs2, order=1, resolution=[10, 10]):
-    """Creates an RBF surface based on the parametric equations of the CA1 volume.
-    """
-    ures = resolution[0]
-    vres = resolution[1]
 
-    obs_u = np.linspace(extent_u[0], extent_u[1], num=ures)
-    obs_v = np.linspace(extent_v[0], extent_v[1], num=vres)
+def test_mplot_volume():
 
-    u, v = np.meshgrid(obs_u, obs_v, indexing='ij')
-    xyz = CA1_volume(u, v, obs_l, rotate=rotate)
+    extent_u = [0.0, 4000.0]
+    extent_v = [0.0, 1250.0]
+    extent_l = [0.0, 100.0]
+    
+    vol = make_CA1_volume(extent_u, extent_v, extent_l, resolution=[2, 2, 2])
 
-    srf = RBFSurface(obs_u, obs_v, xyz, basis=basis, order=order)
+    from mayavi import mlab
 
-    return srf
+    vol.mplot_volume(color=(0, 1, 0), opacity=1.0, ures=1, vres=1)
+
+    mlab.show()
+
+
+def test_tri():
+
+    extent_u = [0.0, 4000.0]
+    extent_v = [0.0, 1250.0]
+    extent_l = [0.0, 100.0]
+    
+    vol = make_CA1_volume(extent_u, extent_v, extent_l, resolution=[2, 2, 2])
+
+    tri = vol.create_triangulation(ures=1, vres=1, lres=1)
+    
+    return vol, tri
+    
+if __name__ == '__main__':
+    test_mplot_volume()
+    vol, tri = test_tri()
+    points = tri.points
+    simplices = tri.simplices
+    import matplotlib.pyplot as plt
+    import mpl_toolkits.mplot3d as plt3d
+    axes = plt3d.Axes3D(plt.figure())
+    vts = points[simplices, :]
+    poly = plt3d.art3d.Poly3DCollection(vts)
+    poly.set_alpha(0.2)
+    poly.set_color('grey')
+    axes.add_collection3d(poly)
+    axes.plot(points[:,0], points[:,1], points[:,2], 'ko')
+    axes.set_aspect('equal')
+    plt.show()
+    
+
+

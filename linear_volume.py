@@ -1,17 +1,14 @@
-"""Implements a parametric volume as a 3-tuple of RBF instances, one each for u, v and l.
+"""Implements a parametric volume as a 3-tuple of linear interpolation instances, one each for u, v and l.
 Based on code from bspline_surface.py
 """
 from __future__ import division
 
 import logging, sys, math, pickle
 from collections import namedtuple
-
+from scipy.interpolate import LinearNDInterpolator
 import numpy as np
 
-import rbf
-import rbf.basis
 from past.utils import old_div
-from rbf.interpolate import RBFInterpolant
 
 
 def euclidean_distance(a, b):
@@ -72,8 +69,8 @@ def cartesian_product(arrays, out=None):
     return out
 
 
-class RBFVolume(object):
-    def __init__(self, u, v, l, xyz, order=1, basis=rbf.basis.phs3):
+class LinearVolume(object):
+    def __init__(self, u, v, l, xyz):
         """Parametric (u,v,l) 3D volume approximation.
 
         Parameters
@@ -82,18 +79,14 @@ class RBFVolume(object):
             1-D arrays of coordinates.
         xyz : array_like
             3-D array of (x, y, z) data with shape (3, u.size, v.size).
-        order : int, optional
-            Order of interpolation. Default is 1.
-        basis: RBF basis function
         """
 
-        self._create_vol(u, v, l, xyz, order=order, phi=basis)
+        self._create_vol(u, v, l, xyz)
 
         self.u = u
         self.v = v
         self.l = l
         self.xyz = xyz
-        self.order = order
 
         self.tri = None
         self.facets = None
@@ -110,15 +103,13 @@ class RBFVolume(object):
 
     def save(self, filename, basis_name):
 
-        s = {'u': self.u, 'v': self.v, 'l': self.l, 'xyz': self.xyz, 'order': self.order, \
-             'basis': self.basis}
-
+        s = {'u': self.u, 'v': self.v, 'l': self.l, 'xyz': self.xyz}
         f = open(filename, "wb")
         pickle.dump(s, f)
         f.close()
 
     def __call__(self, *args, **kwargs):
-        """Convenience to allow evaluation of a RBFVolume
+        """Convenience to allow evaluation of a LinearVolume
         instance via `foo(0, 0, 0)` instead of `foo.ev(0, 0, 0)`.
         """
         return self.ev(*args, **kwargs)
@@ -129,13 +120,13 @@ class RBFVolume(object):
         u, v, l = np.meshgrid(obs_u, obs_v, obs_l, indexing='ij')
         uvl_obs = np.array([u.ravel(), v.ravel(), l.ravel()]).T
 
-        xvol = RBFInterpolant(uvl_obs, xyz[:, 0], **kwargs)
-        yvol = RBFInterpolant(uvl_obs, xyz[:, 1], **kwargs)
-        zvol = RBFInterpolant(uvl_obs, xyz[:, 2], **kwargs)
+        xvol = LinearNDInterpolator(uvl_obs, xyz[:, 0], **kwargs)
+        yvol = LinearNDInterpolator(uvl_obs, xyz[:, 1], **kwargs)
+        zvol = LinearNDInterpolator(uvl_obs, xyz[:, 2], **kwargs)
 
-        uvol = RBFInterpolant(xyz, uvl_obs[:, 0], **kwargs)
-        vvol = RBFInterpolant(xyz, uvl_obs[:, 1], **kwargs)
-        lvol = RBFInterpolant(xyz, uvl_obs[:, 2], **kwargs)
+        uvol = LinearNDInterpolator(xyz, uvl_obs[:, 0], **kwargs)
+        vvol = LinearNDInterpolator(xyz, uvl_obs[:, 1], **kwargs)
+        lvol = LinearNDInterpolator(xyz, uvl_obs[:, 2], **kwargs)
 
         self._xvol = xvol
         self._yvol = yvol
@@ -278,9 +269,9 @@ class RBFVolume(object):
 
         uvl_coords = np.array([U.ravel(), V.ravel(), L.ravel()]).T
 
-        X = self._xvol(uvl_coords, chunk_size=chunk_size)
-        Y = self._yvol(uvl_coords, chunk_size=chunk_size)
-        Z = self._zvol(uvl_coords, chunk_size=chunk_size)
+        X = self._xvol(uvl_coords)
+        Y = self._yvol(uvl_coords)
+        Z = self._zvol(uvl_coords)
 
         arr = np.array([X, Y, Z])
 
@@ -699,12 +690,6 @@ class RBFVolume(object):
         volpts = self.ev(hru, hrv, hrl).reshape(3, -1).T
         qhull_options = 'QJ'
         tri = Delaunay(volpts, qhull_options=qhull_options)
-        keep = np.ones(len(tri.simplices), dtype = bool)
-        for i, t in enumerate(tri.simplices):
-            if abs(np.linalg.det(np.hstack((volpts[t], np.ones([1,N+1]).T)))) < 1E-12:
-                keep[i] = False # Point is coplanar, we don't want to keep it
-        tri.simplices = tri.simplices[keep]
-        
         self.tri = tri
 
         return tri
@@ -743,8 +728,7 @@ def test_mplot_surface():
     u, v, l = np.meshgrid(obs_u, obs_v, obs_l, indexing='ij')
     xyz = test_surface(u, v, l).reshape(3, u.size).T
 
-    order = 1
-    vol = RBFVolume(obs_u, obs_v, obs_l, xyz, order=order)
+    vol = LinearVolume(obs_u, obs_v, obs_l, xyz)
 
     from mayavi import mlab
 
@@ -761,8 +745,7 @@ def test_mplot_volume():
     u, v, l = np.meshgrid(obs_u, obs_v, obs_l, indexing='ij')
     xyz = test_surface(u, v, l).reshape(3, u.size).T
 
-    order = 1
-    vol = RBFVolume(obs_u, obs_v, obs_l, xyz, order=order)
+    vol = LinearVolume(obs_u, obs_v, obs_l, xyz)
 
     from mayavi import mlab
 
@@ -779,15 +762,13 @@ def test_uv_isospline():
     u, v, l = np.meshgrid(obs_u, obs_v, obs_l, indexing='ij')
     xyz = test_surface(u, v, l).reshape(3, u.size).T
 
-    order = [1]
-    for ii in range(len(order)):
-        vol = RBFVolume(obs_u, obs_v, obs_l, xyz, order=order[ii])
+    vol = LinearVolume(obs_u, obs_v, obs_l, xyz)
 
-        U, V = vol._resample_uv(5, 5)
-        L = np.asarray([-1.0])
-
-        nupts = U.shape[0]
-        nvpts = V.shape[0]
+    U, V = vol._resample_uv(5, 5)
+    L = np.asarray([-1.0])
+    
+    nupts = U.shape[0]
+    nvpts = V.shape[0]
 
     from mayavi import mlab
 
@@ -816,7 +797,7 @@ def test_point_distance_mesh():
     u, v, l = np.meshgrid(obs_u, obs_v, obs_l, indexing='ij')
     xyz = test_surface(u, v, l).reshape(3, u.size).T
 
-    vol = RBFVolume(obs_u, obs_v, obs_l, xyz, order=2)
+    vol = LinearVolume(obs_u, obs_v, obs_l, xyz)
 
     U, V = vol._resample_uv(5, 5)
     L = np.asarray([1.0, 0.0, -1.0])
@@ -837,7 +818,7 @@ def test_point_distance():
     u, v, l = np.meshgrid(obs_u, obs_v, obs_l, indexing='ij')
     xyz = test_surface(u, v, l).reshape(3, u.size).T
 
-    vol = RBFVolume(obs_u, obs_v, obs_l, xyz, order=2)
+    vol = LinearVolume(obs_u, obs_v, obs_l, xyz)
 
     U, V = vol._resample_uv(5, 5)
     L = np.asarray([1.0, 0.0, -1.0])
@@ -860,7 +841,7 @@ def test_point_position():
     u, v, l = np.meshgrid(obs_u, obs_v, obs_l, indexing='ij')
     xyz = test_surface(u, v, l).reshape(3, u.size).T
 
-    vol = RBFVolume(obs_u, obs_v, obs_l, xyz, order=2)
+    vol = LinearVolume(obs_u, obs_v, obs_l, xyz)
 
     U, V = vol._resample_uv(5, 5)
     L = np.asarray([1.0, 0.0, -1.0])
@@ -877,7 +858,7 @@ def test_precision():
     u, v, l = np.meshgrid(obs_u, obs_v, obs_l, indexing='ij')
     xyz = test_surface(u, v, l).reshape(3, u.size).T
 
-    vol = RBFVolume(obs_u, obs_v, obs_l, xyz, order=2)
+    vol = LinearVolume(obs_u, obs_v, obs_l, xyz)
 
     test_u = np.linspace(-0.016 * np.pi, 1.01 * np.pi, 250)
     test_v = np.linspace(-0.23 * np.pi, 1.425 * np.pi, 250)
@@ -902,7 +883,7 @@ def test_tri():
     u, v, l = np.meshgrid(obs_u, obs_v, obs_l, indexing='ij')
     xyz = test_surface(u, v, l).reshape(3, u.size)
 
-    vol = RBFVolume(obs_u, obs_v, obs_l, xyz, order=2)
+    vol = LinearVolume(obs_u, obs_v, obs_l, xyz)
 
     tri = vol.create_triangulation()
 
@@ -919,10 +900,10 @@ def test_load():
     u, v, l = np.meshgrid(obs_u, obs_v, obs_l, indexing='ij')
     xyz = test_surface(u, v, l)
 
-    vol = RBFVolume(obs_u, obs_v, obs_l, xyz, order=2)
+    vol = LinearVolume(obs_u, obs_v, obs_l, xyz)
 
     vol.save('vol.p', 'phs3')
-    vol_from_file = RBFVolume.load('vol.p')
+    vol_from_file = LinearVolume.load('vol.p')
 
     print((vol(0.5, 0.5, 0.5)))
     print((vol_from_file(0.5, 0.5, 0.5)))
