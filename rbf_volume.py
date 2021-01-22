@@ -1,16 +1,12 @@
 """Implements a parametric volume as a 3-tuple of RBF instances, one each for u, v and l.
 Based on code from bspline_surface.py
 """
-from __future__ import division
 
-import logging, sys, math, pickle
+import logging, math, pickle
 from collections import namedtuple
-
 import numpy as np
-
 import rbf
 import rbf.basis
-from past.utils import old_div
 from rbf.interpolate import RBFInterpolant
 
 
@@ -63,7 +59,7 @@ def cartesian_product(arrays, out=None):
     if out is None:
         out = np.zeros([n, len(arrays)], dtype=dtype)
 
-    m = old_div(n, arrays[0].size)
+    m = n / arrays[0].size
     out[:, 0] = np.repeat(arrays[0], m)
     if arrays[1:]:
         cartesian_product(arrays[1:], out=out[0:m, 1:])
@@ -175,7 +171,7 @@ class RBFVolume(object):
         for n in range(N):
             ndistance, self_index, neighbor_index = distance_dictionary[tuple(xyz[n])]
             nearest_neighbor = xyz[neighbor_index]
-            rel = old_div(np.abs(ndistance - min_distance), min_distance)
+            rel = np.abs(ndistance - min_distance) / min_distance
             points_to_add = 2 ** (rel + 2)
             distance_dictionary[tuple(xyz[n])].append(points_to_add)
             f.write(str(int(points_to_add)) + '\n')
@@ -492,7 +488,7 @@ class RBFVolume(object):
         """
         ## Distance from b1 boundary to coordinate
         d1 = np.abs(b1 - coords[axis])
-        ps1 = np.linspace(b1, coords[axis], int(old_div(d1, resolution)))
+        ps1 = np.linspace(b1, coords[axis], int(d1 / resolution))
         if len(ps1) > 1:
             p_grid1 = [ps1 if i == axis else coords[i] for i in range(0, 3)]
             p_u, p_v, p_l = np.meshgrid(*p_grid1)
@@ -503,7 +499,7 @@ class RBFVolume(object):
 
         ## Distance from coordinate to b2 boundary
         d2 = np.abs(b2 - coords[axis])
-        ps2 = np.linspace(coords[axis], b2, int(old_div(d2, resolution)))
+        ps2 = np.linspace(coords[axis], b2, int(d2 / resolution))
         if len(ps2) > 1:
             p_grid2 = [ps2 if i == axis else coords[i] for i in range(0, 3)]
             p_u, p_v, p_l = np.meshgrid(*p_grid2)
@@ -543,12 +539,12 @@ class RBFVolume(object):
             u_dist1, u_dist2 = self.boundary_distance(0, self.u[0], self.u[-1], uvl[i, :], resolution=resolution)
 
             u_extent = u_dist1 + u_dist2
-            u_pos = old_div(u_dist1, u_extent)
+            u_pos = u_dist1 / u_extent
 
             v_dist1, v_dist2 = self.boundary_distance(1, self.v[0], self.v[-1], uvl[i, :], resolution=resolution)
 
             v_extent = v_dist1 + v_dist2
-            v_pos = old_div(v_dist1, v_extent)
+            v_pos = v_dist1 / v_extent
 
             pos.append((u_pos, v_pos))
             extents.append((u_extent, v_extent))
@@ -798,7 +794,7 @@ def test_uv_isospline():
     nvpts = V.shape[0]
     # Plot u,v-isosplines on the surface
     upts = vol(U, V[0], L)
-    vpts = vol(U[int(old_div(nupts, 2))], V, L)
+    vpts = vol(U[int(nupts / 2)], V, L)
 
     vol.mplot_surface(color=(0, 1, 0), opacity=1.0, ures=10, vres=10)
 

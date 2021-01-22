@@ -1,5 +1,4 @@
 """Alpha Shape implementation."""
-from __future__ import division
 
 import sys
 from collections import namedtuple
@@ -7,7 +6,6 @@ import numpy as np
 from numpy.core.umath_tests import inner1d
 from scipy.spatial import Delaunay
 
-from past.utils import old_div
 
 AlphaShape = namedtuple('AlphaShape', ['points', 'simplices', 'bounds'])
 
@@ -56,12 +54,12 @@ def circumcenters(simplices, points):
     del xyz_sqsum
 
     ## circumcenter of the sphere
-    x0 = old_div(Dx, (2.0 * a))
-    y0 = old_div(Dy, (2.0 * a))
-    z0 = old_div(Dz, (2.0 * a))
+    x0 = Dx / (2.0 * a)
+    y0 = Dy / (2.0 * a)
+    z0 = Dz / (2.0 * a)
 
     ## circumradius
-    r = old_div(np.sqrt((Dx ** 2) + (Dy ** 2) + (Dz ** 2) - 4.0 * a * c), (2.0 * np.abs(a)))
+    r = np.sqrt((Dx ** 2) + (Dy ** 2) + (Dz ** 2) - 4.0 * a * c) / (2.0 * np.abs(a))
 
     return ((x0, y0, z0), r)
 
@@ -87,6 +85,9 @@ def free_boundary(simplices):
     if len(bidxs) == 0:
         raise RuntimeError("alpha.free_boundary: unable to determine facets that belong only to one simplex")
     return ufacets[bidxs]
+
+
+
 
 
 def alpha_shape(pts, radius, tri=None):
@@ -137,7 +138,7 @@ def alpha_shape(pts, radius, tri=None):
         epsvol = 1e-12 * np.sum(vol) / float(n)
         nz_simplices = tri.simplices[np.where(vol > epsvol), :][0]
         holes = nz_simplices.shape[0] < n
-    assert (holes is False)
+        
 
     ## Limit circumradius of simplices
     _, rcc = circumcenters(tri.simplices, tri.points)
@@ -146,5 +147,9 @@ def alpha_shape(pts, radius, tri=None):
     rcc = rcc[rccidxs]
 
     bnd = free_boundary(T)
-
+    if holes:
+        # The removal of zero volume tetrahedra causes false boundary
+        # faces in the interior of the volume. Take care of these.
+        bnd = true_boundary(bnd);
+        
     return AlphaShape(tri.points, T, bnd)
