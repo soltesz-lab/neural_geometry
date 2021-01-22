@@ -656,7 +656,7 @@ class LinearVolume(object):
         fig.scene.camera.trait_set(parallel_projection=1)
         return fig
 
-    def create_triangulation(self, ures=4, vres=4, lres=1, **kwargs):
+    def create_triangulation(self, ures=1, vres=1, lres=1, **kwargs):
         """Compute the triangulation of the volume using scipy's
         `delaunay` function
 

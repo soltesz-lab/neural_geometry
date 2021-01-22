@@ -16,7 +16,7 @@ def CA1_volume(u, v, l, rotate=None):
     return transform_volume(CA1_volume_transform, u, v, l, rotate=rotate)
 
 
-def CA1_meshgrid(extent_u, extent_v, extent_l, resolution=[2, 2, 2], rotate=None, return_uvl=False):
+def CA1_meshgrid(extent_u, extent_v, extent_l, resolution=[3, 3, 3], rotate=None, return_uvl=False):
 
     ures, vres, lres = resolution
 
@@ -33,7 +33,7 @@ def CA1_meshgrid(extent_u, extent_v, extent_l, resolution=[2, 2, 2], rotate=None
         return xyz
 
 
-def make_CA1_volume(extent_u, extent_v, extent_l, rotate=None, resolution=[2, 2, 2], return_xyz=False):
+def make_CA1_volume(extent_u, extent_v, extent_l, rotate=None, resolution=[3, 3, 3], return_xyz=False):
     """Creates an linear volume based on the parametric equations of the CA1 volume."""
 
     xyz, obs_u, obs_v, obs_l = CA1_meshgrid(extent_u, extent_v, extent_l, \
@@ -54,7 +54,7 @@ def test_mplot_volume():
     extent_v = [0.0, 1250.0]
     extent_l = [0.0, 100.0]
     
-    vol = make_CA1_volume(extent_u, extent_v, extent_l, resolution=[2, 2, 2])
+    vol = make_CA1_volume(extent_u, extent_v, extent_l, resolution=[3, 3, 3])
 
     from mayavi import mlab
 
@@ -69,7 +69,7 @@ def test_tri():
     extent_v = [0.0, 1250.0]
     extent_l = [0.0, 100.0]
     
-    vol = make_CA1_volume(extent_u, extent_v, extent_l, resolution=[2, 2, 2])
+    vol = make_CA1_volume(extent_u, extent_v, extent_l, resolution=[3, 3, 3])
 
     tri = vol.create_triangulation(ures=1, vres=1, lres=1)
     

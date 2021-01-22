@@ -14,6 +14,7 @@ AlphaShape = namedtuple('AlphaShape', ['points', 'simplices', 'bounds'])
 
 def volumes(simplices, points):
     """Volumes/areas of tetrahedra/triangles."""
+    
     A = points[simplices[:, 0], :]
     B = np.subtract(points[simplices[:, 1], :], A)
     C = np.subtract(points[simplices[:, 2], :], A)
@@ -29,6 +30,11 @@ def volumes(simplices, points):
         vol = np.subtract(np.multiply(B[:, 0], C[:, 1]) - np.multiply(B[:, 1], C[:, 0]))
         vol = np.abs(vol) / 2.
 
+    print(vol)
+    print(simplices)
+    print(points)
+    sys.stdout.flush()
+        
     return vol
 
 
@@ -118,16 +124,9 @@ def alpha_shape(pts, radius, tri=None):
 
     ## Delaunay triangulation
     if tri is None:
-        N = 3
         volpts = self.ev(hru, hrv, hrl).reshape(3, -1).T
-        qhull_options = 'Qt Qbb Qc Qx'
+        qhull_options = 'QJ'
         tri = Delaunay(volpts, qhull_options=qhull_options)
-        keep = np.ones(len(tri.simplices), dtype = bool)
-        for i, t in enumerate(tri.simplices):
-            if abs(np.linalg.det(np.hstack((volpts[t], np.ones([1,N+1]).T)))) < 1E-12:
-                keep[i] = False # Point is coplanar, we don't want to keep it
-        tri.simplices = tri.simplices[keep]
-
 
     ## Check for zero volume tetrahedra since
     ## these can be of arbitrary large circumradius
