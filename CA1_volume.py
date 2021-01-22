@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-from neural_geometry.geometry import transform_volume
+from neural_geometry.geometry import transform_volume, make_alpha_shape
 from neural_geometry.linear_volume import LinearVolume
 
 
@@ -75,22 +75,36 @@ def test_tri():
     
     return vol, tri
     
-if __name__ == '__main__':
-    test_mplot_volume()
-    vol, tri = test_tri()
-    points = tri.points
-    simplices = tri.simplices
-    import matplotlib.pyplot as plt
-    import mpl_toolkits.mplot3d as plt3d
-    axes = plt3d.Axes3D(plt.figure())
-    vts = points[simplices, :]
-    poly = plt3d.art3d.Poly3DCollection(vts)
-    poly.set_alpha(0.2)
-    poly.set_color('grey')
-    axes.add_collection3d(poly)
-    axes.plot(points[:,0], points[:,1], points[:,2], 'ko')
-    axes.set_aspect('equal')
-    plt.show()
+
+def test_alpha_shape():
+
+    extent_u = [0.0, 4000.0]
+    extent_v = [0.0, 1250.0]
+    extent_l = [0.0, 100.0]
     
+    vol = make_CA1_volume(extent_u, extent_v, extent_l, resolution=[3, 3, 3])
+
+    alpha = make_alpha_shape(vol, alpha_radius=1200.)
+    
+    return vol, alpha
+    
+if __name__ == '__main__':
+    test_alpha_shape()
+
+    # test_mplot_volume()
+    # vol, tri = test_tri()
+    # points = tri.points
+    # simplices = tri.simplices
+    # import matplotlib.pyplot as plt
+    # import mpl_toolkits.mplot3d as plt3d
+    # axes = plt3d.Axes3D(plt.figure())
+    # vts = points[simplices, :]
+    # poly = plt3d.art3d.Poly3DCollection(vts)
+    # poly.set_alpha(0.2)
+    # poly.set_color('grey')
+    # axes.add_collection3d(poly)
+    # axes.plot(points[:,0], points[:,1], points[:,2], 'ko')
+    # axes.set_aspect('equal')
+    # plt.show()
 
 
