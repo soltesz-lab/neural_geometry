@@ -114,7 +114,7 @@ class RBFVolume(object):
         f.close()
 
     def __call__(self, *args, **kwargs):
-        """Convenience to allow evaluation of a RBFVolume
+        """Convenience method to allow evaluation of a RBFVolume
         instance via `foo(0, 0, 0)` instead of `foo.ev(0, 0, 0)`.
         """
         return self.ev(*args, **kwargs)

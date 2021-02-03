@@ -200,12 +200,6 @@ def alpha_shape(pts, radius, tri=None):
         volpts = self.ev(hru, hrv, hrl).reshape(3, -1).T
         qhull_options = 'QJ'
         tri = Delaunay(volpts, qhull_options=qhull_options)
-
-    #keep = np.ones(len(tri.simplices), dtype = bool)
-    #for i, t in enumerate(tri.simplices):
-    #    if abs(np.linalg.det(np.hstack((tri.points[t], np.ones([1,dim+1]).T)))) < 1E-12:
-    #        keep[i] = False # Point is coplanar, we don't want to keep it
-    #tri.simplices = tri.simplices[keep]
     
     ## Check for zero volume tetrahedra since
     ## these can be of arbitrary large circumradius
