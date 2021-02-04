@@ -120,13 +120,13 @@ class LinearVolume(object):
         u, v, l = np.meshgrid(obs_u, obs_v, obs_l, indexing='ij')
         uvl_obs = np.array([u.ravel(), v.ravel(), l.ravel()]).T
 
-        xvol = LinearNDInterpolator(uvl_obs, xyz[:, 0], **kwargs)
-        yvol = LinearNDInterpolator(uvl_obs, xyz[:, 1], **kwargs)
-        zvol = LinearNDInterpolator(uvl_obs, xyz[:, 2], **kwargs)
+        xvol = LinearNDInterpolator(uvl_obs, xyz[:, 0], fill_value=xyz[0, 0], **kwargs)
+        yvol = LinearNDInterpolator(uvl_obs, xyz[:, 1], fill_value=xyz[0, 1], **kwargs)
+        zvol = LinearNDInterpolator(uvl_obs, xyz[:, 2], fill_value=xyz[0, 2], **kwargs)
 
-        uvol = LinearNDInterpolator(xyz, uvl_obs[:, 0], **kwargs)
-        vvol = LinearNDInterpolator(xyz, uvl_obs[:, 1], **kwargs)
-        lvol = LinearNDInterpolator(xyz, uvl_obs[:, 2], **kwargs)
+        uvol = LinearNDInterpolator(xyz, uvl_obs[:, 0], fill_value=uvl_obs[0, 0], **kwargs)
+        vvol = LinearNDInterpolator(xyz, uvl_obs[:, 1], fill_value=uvl_obs[0, 1], **kwargs)
+        lvol = LinearNDInterpolator(xyz, uvl_obs[:, 2], fill_value=uvl_obs[0, 2], **kwargs)
 
         self._xvol = xvol
         self._yvol = yvol
