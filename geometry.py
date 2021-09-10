@@ -84,7 +84,18 @@ def transform_volume(transform, u, v, l, rotate=None):
 
     return xyz
 
+def get_layer_extents(layer_extents, layer):
+    min_u, max_u = 0.0, 0.0
+    min_v, max_v = 0.0, 0.0
+    min_l, max_l = 0.0, 0.0
+    for current_layer, extent in viewitems(layer_extents):
+        if current_layer == layer:
+            min_u, max_u = extent[0][0], extent[1][0]
+            min_v, max_v = extent[0][1], extent[1][1]
+            min_l, max_l = extent[0][2], extent[1][2]
+    return ((min_u, max_u), (min_v, max_v), (min_l, max_l))
 
+    
 def get_total_extents(layer_extents):
 
     min_u = float('inf')

@@ -470,7 +470,7 @@ class LinearVolume(object):
         else:
             return pos
 
-    def mplot_surface(self, ures=8, vres=8, **kwargs):
+    def mplot_surface(self, ures=8, vres=8, figax=False, **kwargs):
         """Plot the enclosing surfaces of the volume using Mayavi's `mesh()` function
 
         Parameters
@@ -514,13 +514,18 @@ class LinearVolume(object):
         meshpts1 = self.ev(hru, hrv, np.max(self.l))
         meshpts2 = self.ev(hru, hrv, np.min(self.l))
 
-        m1 = mlab.mesh(*meshpts1, **kwargs)
-        m2 = mlab.mesh(*meshpts2, **kwargs)
+        if figax is None:
+            m1 = mlab.mesh(*meshpts1, **kwargs)
+            m2 = mlab.mesh(*meshpts2, **kwargs)
 
-        # Turn off perspective
-        fig = mlab.gcf()
-        fig.scene.camera.trait_set(parallel_projection=1)
-        return fig
+            # Turn off perspective
+            fig = mlab.gcf()
+            fig.scene.camera.trait_set(parallel_projection=1)
+            return fig
+        else:
+            fig, ax = figax
+            m1 = ax.plot_surface(*meshpts1, **kwargs)
+            m2 = ax.plot_surface(*meshpts2, **kwargs)
 
     def mplot_volume(self, ures=8, vres=8, **kwargs):
         """Plot the volume using Mayavi's `scalar_scatter()` function
